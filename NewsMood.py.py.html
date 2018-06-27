@@ -1,0 +1,96 @@
+
+# coding: utf-8
+
+# In[ ]:
+
+
+get_ipython().run_line_magic('matplotlib', 'inline')
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import json
+import tweepy
+import time
+import seaborn as sns
+
+
+# In[ ]:
+
+
+from textblob import TextBlob
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+analyzer = SentimentIntensityAnalyzer()
+
+
+# In[ ]:
+
+
+consumer_key = "78u2GUfkC6OcaEllr5Z7oUfFy"
+consumer_secret = "tTsNncbAlA6E930ljL5ZqPOXyia1n3A776JRlBZs3W6dnIwLmo"
+access_token = "1375489879-6kGlVZ3AfpO5b33NxGAgfvmru9Of49BfFesCS3X"
+access_token_secret = "bAlq5zvMQTySvVu3WSmLfLbmIK3y3EQ0lzqM1ayUgEfGI"
+
+
+# In[ ]:
+
+
+auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+auth.set_access_token(access_token, access_token_secret)
+api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
+
+news_source = ["FoxNews", "CNN", "BBCWorld", "CBSNews", "nytimes"]
+
+
+# In[ ]:
+
+
+tweet_data = {
+    "tweet_source": [],
+    "tweet_text": [],
+    "tweet_date": [],
+    "tweet_vader_score": [],
+    "tweet_neg_score": [],
+    "tweet_pos_score": [],
+    "tweet_neu_score": []
+}
+
+for x in range(5):
+
+    for source in news_source:
+
+        tweets = api.user_timeline(source, page=x)
+
+        for tweet in tweets:
+
+            tweet_data["tweet_source"].append(tweet["user"]["name"])
+            tweet_data["tweet_text"].append(tweet["text"])
+            tweet_data["tweet_date"].append(tweet["created_at"])
+
+            tweet_data["tweet_vader_score"].append(analyzer.polarity_scores(tweet["text"])["compound"])
+            tweet_data["tweet_pos_score"].append(analyzer.polarity_scores(tweet["text"])["pos"])
+            tweet_data["tweet_neu_score"].append(analyzer.polarity_scores(tweet["text"])["neu"])
+            tweet_data["tweet_neg_score"].append(analyzer.polarity_scores(tweet["text"])["neg"])
+
+
+# In[ ]:
+
+
+tweet_df = pd.DataFrame(tweet_data, columns=["tweet_source", 
+                                             "tweet_text", 
+                                             "tweet_date",
+                                             "tweet_vader_score",
+                                             "tweet_pos_score",
+                                             "tweet_neu_score",
+                                             "tweet_neg_score"])
+
+file_name = str(time.strftime("%m-%d-%y")) + "-tweets.csv"
+tweet_df.to_csv("analysis/" + file_name, encoding="utf-8")
+
+tweet_df.head()
+
+
+# In[ ]:
+
+
+tweet_df.count()
+
